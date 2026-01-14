@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI,HTTPException, UploadFile, File
 import cv2, numpy as np
 from qdrant_client import QdrantClient
 from face_model import get_embedding
@@ -52,25 +52,41 @@ async def register_face(user_id: str, file: UploadFile = File(...)):
 
 @app.post("/identify")
 async def identify_face(file: UploadFile = File(...)):
-    image_bytes = await file.read()
-    embedding = get_embedding(image_bytes)
+    try:
+        image_bytes = await file.read()
 
-    results = search_face(embedding)
+        with open("debug_received_image.jpg", "wb") as f:
+            f.write(image_bytes)
+        print("Save debug image: debug_received_image.jpg")
 
-    if not results:
-        return {"match": False}
+        embedding = get_embedding(image_bytes)
 
-    top = results[0]
+        results = search_face(embedding)
 
-    if top.score < MATCH_THRESHOLD:
+        if not results:
+            return {"match": False}
+
+        top = results[0]
+
+        if top.score < MATCH_THRESHOLD:
+            return {
+                "match": False,
+                "reason": "below_threshold",
+                "score": top.score
+            }
+    
         return {
-            "match": False,
-            "reason": "below_threshold",
+            "match": True,
+            "user_id": top.payload["user_id"],
             "score": top.score
         }
-    
-    return {
-        "match": True,
-        "user_id": top.payload["user_id"],
-        "score": top.score
-    }
+    except ValueError as e:
+        # ดักจับ Error "No face detected"
+        if str(e) == "No face detected":
+            raise HTTPException(status_code=400, detail="ไม่พบใบหน้าในรูปภาพ (No face detected)")
+        else:
+            raise HTTPException(status_code=500, detail=str(e))
+            
+    except Exception as e:
+        # ดักจับ Error อื่นๆ ทั่วไป
+        raise HTTPException(status_code=500, detail="Internal Server Error")
