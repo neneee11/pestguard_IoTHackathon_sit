@@ -9,17 +9,6 @@ app = insightface.app.FaceAnalysis(
 
 app.prepare(ctx_id=0, det_size=(640, 640))
 
-
-'''def get_embedding(image):
-    """
-    image: numpy array (BGR, OpenCV)
-    return: 512-d embedding or None
-    """
-    faces = app.get(image)
-    if not faces:
-        return None
-    return faces[0].embedding'''
-
 def get_embedding(image_bytes: bytes):
     # แปลง bytes → image
     np_img = np.frombuffer(image_bytes, np.uint8)

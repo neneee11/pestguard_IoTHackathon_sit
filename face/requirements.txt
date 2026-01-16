@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-multipart
+pydantic
+pydantic-settings
+qdrant-client
+insightface
+onnxruntime-gpu  # หรือ onnxruntime ถ้าใช้ CPU
+opencv-python
+torch
+numpy
