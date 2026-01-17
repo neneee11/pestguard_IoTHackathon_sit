@@ -3,7 +3,8 @@ import datetime
 import pytz # แนะนำให้ใช้เพื่อแก้ปัญหา Timezone
 import numpy as np
 import cv2
-from fastapi import FastAPI, UploadFile, HTTPException, Form, Depends, File
+from fastapi import FastAPI, UploadFile, HTTPException, Form, Depends, File, Request
+import os
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, update
 from insightface.app import FaceAnalysis
