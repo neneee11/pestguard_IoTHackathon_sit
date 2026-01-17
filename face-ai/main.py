@@ -3,7 +3,7 @@ import datetime
 import pytz # แนะนำให้ใช้เพื่อแก้ปัญหา Timezone
 import numpy as np
 import cv2
-from fastapi import FastAPI, UploadFile, HTTPException, Form, Depends
+from fastapi import FastAPI, UploadFile, HTTPException, Form, Depends, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, update
 from insightface.app import FaceAnalysis
@@ -58,7 +58,7 @@ def process_image(file_bytes):
 async def register_student(
     student_no: str = Form(...),
     name: str = Form(...),
-    file: UploadFile = Form(...),
+    file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db) # Inject Async DB Session
 ):
     try:
