@@ -1,6 +1,6 @@
 # models.py
 import uuid
-from sqlalchemy import Column, Integer, String, Boolean, Time, Date, ForeignKey, CheckConstraint
+from sqlalchemy import Column, Integer, String, Boolean, Time, Date, ForeignKey, CheckConstraint, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.sql import func
@@ -34,6 +34,10 @@ class StudentEnrolled(Base):
     student_id = Column(UUID(as_uuid=True), ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
     subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
     attended = Column(Boolean, default=False)
+
+    __table_args__ = (
+        UniqueConstraint('student_id', 'subject_id', name='unique_student_subject_enrollment'),
+    )
 
 # Table 4: attendance_logs [cite: 6]
 class AttendanceLog(Base):

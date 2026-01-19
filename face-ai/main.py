@@ -3,7 +3,8 @@ import datetime
 import pytz # แนะนำให้ใช้เพื่อแก้ปัญหา Timezone
 import numpy as np
 import cv2
-from fastapi import FastAPI, UploadFile, HTTPException, Form, Depends, File
+from fastapi import FastAPI, UploadFile, HTTPException, Form, Depends, File, Request
+import os
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, update
 from insightface.app import FaceAnalysis
@@ -103,21 +104,27 @@ async def check_in(
     try:
         # 1. Process Image
         image_bytes = await file.read()
-        embedding = process_image(image_bytes)
-
+        try:
+            embedding = process_image(image_bytes)
+        except ValueError as ve:
+            return {"status": "failed", "message": str(ve)}
+        
         # 2. Search Qdrant
         search_result = qdrant.query_points(
             collection_name=COLLECTION_NAME,
-            query_vector=embedding.tolist(),
+            query=embedding.tolist(),
             limit=1,
             score_threshold=0.5
         )
 
-        if not search_result:
+        if not search_result.points:
             return {"status": "failed", "message": "Unknown person"}
 
-        student_id_str = search_result[0].id
-        student_uuid = uuid.UUID(student_id_str) # Convert string to UUID obj
+        # ดึงคนแรกสุดออกมา
+        top_match = search_result.points[0]
+
+        student_uuid = uuid.UUID(top_match.id) # Convert string to UUID obj
+        print(f"Match Found: {top_match.payload.get('name')} (Score: {top_match.score})")
 
         # 3. เตรียมเวลาปัจจุบัน (Timezone Aware)
         now = datetime.datetime.now(BKK_TZ)
@@ -181,7 +188,7 @@ async def check_in(
 
         return {
             "status": "success",
-            "student_name": search_result[0].payload.get("name"),
+            "student_name": top_match.payload.get("name"),
             "subject": subject.name,
             "time": now.strftime("%H:%M:%S")
         }
